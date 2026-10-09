@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import ProgressChart from "@/app/components/ProgressChart";
 import TodoForm from "@/app/components/TodoForm";
@@ -8,34 +8,19 @@ import FilterBar from "@/app/components/FilterBar";
 import TodoItem from "@/app/components/TodoItem";
 import type { Category, Priority, Todo } from "@/app/lib/types";
 
-const STORAGE_KEY = "simple-todo:todos";
+const POLL_INTERVAL_MS = 5000;
 
-function normalize(raw: unknown): Todo[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.map((entry, index) => {
-    const item = (entry ?? {}) as Record<string, unknown>;
-    const priority =
-      item.priority === "high" ||
-      item.priority === "medium" ||
-      item.priority === "low"
-        ? item.priority
-        : "medium";
-    const category =
-      item.category === "work" ||
-      item.category === "private" ||
-      item.category === "other"
-        ? item.category
-        : "other";
-    return {
-      id: typeof item.id === "string" ? item.id : crypto.randomUUID(),
-      text: typeof item.text === "string" ? item.text : "",
-      completed: !!item.completed,
-      priority,
-      category,
-      dueDate: typeof item.dueDate === "string" ? item.dueDate : null,
-      createdAt:
-        typeof item.createdAt === "number" ? item.createdAt : -index,
-    };
+async function fetchTodos(): Promise<Todo[]> {
+  const res = await fetch("/api/todos", { cache: "no-store" });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+async function persistTodos(todos: Todo[]) {
+  await fetch("/api/todos", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(todos),
   });
 }
 
@@ -48,27 +33,41 @@ export default function Home() {
   const [priorityFilter, setPriorityFilter] = useState<Priority | "all">(
     "all"
   );
+  const isMutatingRef = useRef(false);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      // 保存データをマウント後に一度だけ読み込むため、effect内でのsetStateは意図的
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (saved) setTodos(normalize(JSON.parse(saved)));
-    } catch {
-      // localStorageが使えない場合は空の状態で続行
-    }
-    setIsLoaded(true);
+    let cancelled = false;
+
+    const refresh = async () => {
+      if (isMutatingRef.current) return;
+      const data = await fetchTodos();
+      if (!cancelled) setTodos(data);
+    };
+
+    refresh().finally(() => {
+      if (!cancelled) setIsLoaded(true);
+    });
+
+    const interval = setInterval(refresh, POLL_INTERVAL_MS);
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
   }, []);
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-    } catch {
-      // 保存に失敗しても無視する
-    }
-  }, [todos, isLoaded]);
+  const applyChange = (next: Todo[]) => {
+    setTodos(next);
+    isMutatingRef.current = true;
+    persistTodos(next).finally(() => {
+      isMutatingRef.current = false;
+    });
+  };
 
   const addTodo = (input: {
     text: string;
@@ -76,7 +75,7 @@ export default function Home() {
     category: Category;
     dueDate: string | null;
   }) => {
-    setTodos((prev) => [
+    applyChange([
       {
         id: crypto.randomUUID(),
         text: input.text,
@@ -86,18 +85,18 @@ export default function Home() {
         dueDate: input.dueDate,
         createdAt: Date.now(),
       },
-      ...prev,
+      ...todos,
     ]);
   };
 
   const toggleTodo = (id: string) => {
-    setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
+    applyChange(
+      todos.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
     );
   };
 
   const deleteTodo = (id: string) => {
-    setTodos((prev) => prev.filter((t) => t.id !== id));
+    applyChange(todos.filter((t) => t.id !== id));
   };
 
   const filteredTodos = todos.filter(
@@ -125,7 +124,9 @@ export default function Home() {
           onPriorityChange={setPriorityFilter}
         />
 
-        {filteredTodos.length === 0 ? (
+        {!isLoaded ? (
+          <p className="py-10 text-center text-sm text-muted">読み込み中...</p>
+        ) : filteredTodos.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted">
             {todos.length === 0
               ? "タスクはまだありません。"
