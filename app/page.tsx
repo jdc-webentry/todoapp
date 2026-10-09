@@ -4,9 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import ProgressChart from "@/app/components/ProgressChart";
 import TodoForm from "@/app/components/TodoForm";
-import FilterBar from "@/app/components/FilterBar";
 import TodoItem from "@/app/components/TodoItem";
-import type { Category, Priority, Todo } from "@/app/lib/types";
+import type { Todo } from "@/app/lib/types";
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -27,12 +26,6 @@ async function persistTodos(todos: Todo[]) {
 export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState<Category | "all">(
-    "all"
-  );
-  const [priorityFilter, setPriorityFilter] = useState<Priority | "all">(
-    "all"
-  );
   const isMutatingRef = useRef(false);
 
   useEffect(() => {
@@ -69,19 +62,12 @@ export default function Home() {
     });
   };
 
-  const addTodo = (input: {
-    text: string;
-    priority: Priority;
-    category: Category;
-    dueDate: string | null;
-  }) => {
+  const addTodo = (input: { text: string; dueDate: string | null }) => {
     applyChange([
       {
         id: crypto.randomUUID(),
         text: input.text,
         completed: false,
-        priority: input.priority,
-        category: input.category,
         dueDate: input.dueDate,
         createdAt: Date.now(),
       },
@@ -99,12 +85,6 @@ export default function Home() {
     applyChange(todos.filter((t) => t.id !== id));
   };
 
-  const filteredTodos = todos.filter(
-    (t) =>
-      (categoryFilter === "all" || t.category === categoryFilter) &&
-      (priorityFilter === "all" || t.priority === priorityFilter)
-  );
-
   const completedCount = todos.filter((t) => t.completed).length;
 
   return (
@@ -117,25 +97,16 @@ export default function Home() {
 
         <TodoForm onAdd={addTodo} />
 
-        <FilterBar
-          category={categoryFilter}
-          priority={priorityFilter}
-          onCategoryChange={setCategoryFilter}
-          onPriorityChange={setPriorityFilter}
-        />
-
         {!isLoaded ? (
           <p className="py-10 text-center text-sm text-muted">読み込み中...</p>
-        ) : filteredTodos.length === 0 ? (
+        ) : todos.length === 0 ? (
           <p className="py-10 text-center text-sm text-muted">
-            {todos.length === 0
-              ? "タスクはまだありません。"
-              : "条件に合うタスクがありません。"}
+            タスクはまだありません。
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
             <AnimatePresence initial={false}>
-              {filteredTodos.map((todo) => (
+              {todos.map((todo) => (
                 <TodoItem
                   key={todo.id}
                   todo={todo}

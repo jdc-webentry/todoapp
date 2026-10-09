@@ -1,32 +1,20 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { Category, Priority } from "@/app/lib/types";
-import { CATEGORY_LABEL, PRIORITY_LABEL } from "@/app/lib/types";
 
 type Props = {
-  onAdd: (input: {
-    text: string;
-    priority: Priority;
-    category: Category;
-    dueDate: string | null;
-  }) => void;
+  onAdd: (input: { text: string; dueDate: string | null }) => void;
 };
-
-const PRIORITIES: Priority[] = ["high", "medium", "low"];
-const CATEGORIES: Category[] = ["work", "private", "other"];
 
 export default function TodoForm({ onAdd }: Props) {
   const [text, setText] = useState("");
-  const [priority, setPriority] = useState<Priority>("medium");
-  const [category, setCategory] = useState<Category>("work");
   const [dueDate, setDueDate] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const submit = () => {
     const trimmed = text.trim();
     if (!trimmed) return;
-    onAdd({ text: trimmed, priority, category, dueDate: dueDate || null });
+    onAdd({ text: trimmed, dueDate: dueDate || null });
     setText("");
     setDueDate("");
     inputRef.current?.focus();
@@ -58,38 +46,12 @@ export default function TodoForm({ onAdd }: Props) {
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <select
-          value={priority}
-          onChange={(e) => setPriority(e.target.value as Priority)}
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none transition focus:border-accent"
-        >
-          {PRIORITIES.map((p) => (
-            <option key={p} value={p}>
-              優先度: {PRIORITY_LABEL[p]}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as Category)}
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs outline-none transition focus:border-accent"
-        >
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              カテゴリ: {CATEGORY_LABEL[c]}
-            </option>
-          ))}
-        </select>
-
-        <input
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-muted outline-none transition focus:border-accent focus:text-foreground"
-        />
-      </div>
+      <input
+        type="date"
+        value={dueDate}
+        onChange={(e) => setDueDate(e.target.value)}
+        className="w-fit rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-muted outline-none transition focus:border-accent focus:text-foreground"
+      />
     </form>
   );
 }

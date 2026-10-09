@@ -10,19 +10,8 @@
   --accent-soft: #e3f3e6;
   --muted: #7c8c7c;
 
-  --priority-high: #e0584a;
-  --priority-high-soft: #fbe6e3;
-  --priority-medium: #d6932b;
-  --priority-medium-soft: #faf0dc;
-  --priority-low: #3f9e6f;
-  --priority-low-soft: #e2f3e9;
-
-  --category-work: #3c6fd1;
-  --category-work-soft: #e4ecfb;
-  --category-private: #9759c9;
-  --category-private-soft: #f1e6fa;
-  --category-other: #6b7a6c;
-  --category-other-soft: #e8ebe6;
+  --danger: #e0584a;
+  --danger-soft: #fbe6e3;
 }
 
 @theme inline {
@@ -48,19 +37,8 @@
     --accent-soft: #223429;
     --muted: #889b86;
 
-    --priority-high: #f08275;
-    --priority-high-soft: #3a2420;
-    --priority-medium: #e3ab5c;
-    --priority-medium-soft: #3a2f1c;
-    --priority-low: #5fc191;
-    --priority-low-soft: #1f3528;
-
-    --category-work: #7ea4ea;
-    --category-work-soft: #202b40;
-    --category-private: #c293e8;
-    --category-private-soft: #2d2338;
-    --category-other: #a3b0a1;
-    --category-other-soft: #26302a;
+    --danger: #f08275;
+    --danger-soft: #3a2420;
   }
 }
 

@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import type { Todo } from "@/app/lib/types";
-import { CATEGORY_LABEL, PRIORITY_LABEL } from "@/app/lib/types";
 
 type Props = {
   todo: Todo;
@@ -11,8 +10,8 @@ type Props = {
 };
 
 function formatDueDate(dueDate: string) {
-  const [, month, day] = dueDate.split("-");
-  return `${Number(month)}/${Number(day)}`;
+  const [year, month, day] = dueDate.split("-");
+  return `${year}/${Number(month)}/${Number(day)}`;
 }
 
 function isOverdue(dueDate: string) {
@@ -70,38 +69,20 @@ export default function TodoItem({ todo, onToggle, onDelete }: Props) {
           {todo.text}
         </span>
 
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <span
-            className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-            style={{
-              color: `var(--priority-${todo.priority})`,
-              backgroundColor: `var(--priority-${todo.priority}-soft)`,
-            }}
-          >
-            優先度: {PRIORITY_LABEL[todo.priority]}
-          </span>
-          <span
-            className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-            style={{
-              color: `var(--category-${todo.category})`,
-              backgroundColor: `var(--category-${todo.category}-soft)`,
-            }}
-          >
-            {CATEGORY_LABEL[todo.category]}
-          </span>
-          {todo.dueDate && (
+        {todo.dueDate && (
+          <div className="mt-1.5">
             <span
               className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                 overdue
-                  ? "bg-[var(--priority-high-soft)] text-[var(--priority-high)]"
+                  ? "bg-[var(--danger-soft)] text-[var(--danger)]"
                   : "bg-accent-soft text-muted"
               }`}
             >
               期限: {formatDueDate(todo.dueDate)}
               {overdue && "（期限切れ）"}
             </span>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       <button
